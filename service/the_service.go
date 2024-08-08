@@ -15,6 +15,6 @@ type TheExpensiveFragileService struct{}
 func (TheExpensiveFragileService) Process(_ context.Context, _ int) error {
 	// do not implement me, just imagine there's huge, complex, almost extra-terrestrial logic here which takes
 	// arbitrary number of time to complete.
-	time.Sleep(time.Duration(rand.Intn(100)) * time.Millisecond)
+	time.Sleep(time.Duration(rand.Intn(5000)) * time.Millisecond)
 	return nil
 }

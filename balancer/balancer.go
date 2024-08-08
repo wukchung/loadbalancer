@@ -3,6 +3,7 @@ package balancer
 import (
 	"context"
 	"fmt"
+	"math"
 	"sort"
 	"sync"
 
@@ -272,8 +273,7 @@ func (b *Balancer) gracefullShutdown(wg *sync.WaitGroup, weight int, clientID st
 }
 
 // clientCap calculates the client's share of the processing capacity
-// I work with integers and just let the division to round down.
-// It can lead to some inaccuracy and leaving some capacity unused, but I just want to keep it simple
+// it's calculated as a ratio of the client's weight and the total weight of all clients
 func (b *Balancer) clientCap(weight int) int32 {
 	b.lock.Lock()
 	defer b.lock.Unlock()
@@ -283,7 +283,9 @@ func (b *Balancer) clientCap(weight int) int32 {
 		return 0
 	}
 
-	return int32(weight) * b.maxLoad / int32(b.totalWeight)
+	cap := float64(weight) * float64(b.maxLoad) / float64(b.totalWeight)
+
+	return int32(math.Ceil(cap))
 }
 
 // getCap waits until there is enough capacity to process the task

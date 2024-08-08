@@ -67,7 +67,7 @@ type Balancer struct {
 // ClientStatus is used to keep track of the client's status
 type ClientStatus struct {
 	// clientLock is used to protect the clientLoad field
-	clientLock *sync.Mutex
+	clientLock *sync.RWMutex
 
 	// clientLoad is used to keep track of how many tasks are currently being processed by the client
 	clientLoad int32
@@ -158,7 +158,7 @@ func (b *Balancer) consumeWorkload(ctx context.Context, workload chan int, weigh
 	wg := sync.WaitGroup{}
 
 	clientStatus := &ClientStatus{
-		clientLock:       &sync.Mutex{},
+		clientLock:       &sync.RWMutex{},
 		clientLoad:       0,
 		capacityWaitLock: &sync.Mutex{},
 		weight:           weight,

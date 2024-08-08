@@ -51,7 +51,7 @@ type Balancer struct {
 	maxLoad int32
 
 	// lock is used to protect the totalWeight field.
-	lock *sync.Mutex
+	lock *sync.RWMutex
 
 	// capacityCond is used to signal that there is a potentional for free capacity
 	capacityCond *sync.Cond
@@ -62,6 +62,28 @@ type Balancer struct {
 
 	// print lock - added only for the print out purposes
 	printLock *sync.Mutex
+}
+
+func (b *Balancer) GetClientsStatusLen() int {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+	return len(b.clientsStatus)
+}
+
+func (b *Balancer) GetTotalWeight() int {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+	return b.totalWeight
+}
+
+func (b *Balancer) GetMaxLoad() int32 {
+	return b.maxLoad
+}
+
+func (b *Balancer) GetClientsStatus(clientId string) *ClientStatus {
+	b.lock.RLock()
+	defer b.lock.RUnlock()
+	return b.clientsStatus[clientId]
 }
 
 // ClientStatus is used to keep track of the client's status
@@ -83,6 +105,24 @@ type ClientStatus struct {
 
 	// processed is used to keep track of how many tasks are already processed - added only for the print out purposes
 	processed int
+}
+
+func (c *ClientStatus) GetProcessed() int {
+	c.clientLock.RLock()
+	defer c.clientLock.RUnlock()
+	return c.processed
+}
+
+func (c *ClientStatus) GetQueued() int {
+	c.clientLock.RLock()
+	defer c.clientLock.RUnlock()
+	return c.queued
+}
+
+func (c *ClientStatus) GetWeight() int {
+	c.clientLock.RLock()
+	defer c.clientLock.RUnlock()
+	return c.weight
 }
 
 // UpdateProcessed updates the number of processed tasks
@@ -121,7 +161,7 @@ func New(service Server, maxLoad int32) *Balancer {
 		service:       service,
 		limiter:       make(chan struct{}, maxLoad),
 		maxLoad:       maxLoad,
-		lock:          &sync.Mutex{},
+		lock:          &sync.RWMutex{},
 		capacityCond:  sync.NewCond(&sync.Mutex{}),
 		clientsStatus: make(map[string]*ClientStatus),
 		printLock:     &sync.Mutex{},
@@ -313,9 +353,12 @@ func (b *Balancer) PrintClientStatus() {
 	sort.Strings(keys)
 
 	for _, key := range keys {
-		clientStatus := b.clientsStatus[key]
+		clientStatus := b.GetClientsStatus(key)
+		if clientStatus == nil {
+			continue
+		}
 
-		clientWeight := clientStatus.weight
+		clientWeight := clientStatus.GetWeight()
 		clientShare := b.clientCap(clientWeight)
 
 		load := clientStatus.GetLoad()
@@ -345,5 +388,5 @@ func (b *Balancer) PrintClientStatus() {
 		)
 	}
 
-	previousLines = len(b.clientsStatus)
+	previousLines = b.GetClientsStatusLen()
 }

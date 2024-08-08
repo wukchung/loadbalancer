@@ -108,8 +108,8 @@ func (c *ClientStatus) UpdateLoad(i int32) {
 
 // GetLoad returns the number of tasks currently being processed
 func (c *ClientStatus) GetLoad() int32 {
-	c.clientLock.Lock()
-	defer c.clientLock.Unlock()
+	c.clientLock.RLock()
+	defer c.clientLock.RUnlock()
 	return c.clientLoad
 }
 
@@ -296,6 +296,7 @@ var previousLines int = 0
 // PrintClientStatus prints the status of all clients in the balancer
 // COPY PASTED, NOT PART OF THE TASK
 // I didn't spend time on this, I just chatGPTed it and little modifed to my needs
+// THIS FUNCTION IS NOT CONCURRENT SAFE
 func (b *Balancer) PrintClientStatus() {
 	b.printLock.Lock()
 	defer b.printLock.Unlock()

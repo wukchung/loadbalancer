@@ -65,22 +65,26 @@ type Balancer struct {
 	printLock *sync.Mutex
 }
 
+// GetClientsStatusLen returns the number of clients in the balancer
 func (b *Balancer) GetClientsStatusLen() int {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return len(b.clientsStatus)
 }
 
+// GetTotalWeight returns the total weight of all clients
 func (b *Balancer) GetTotalWeight() int {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
 	return b.totalWeight
 }
 
+// GetMaxLoad returns the maximum number of work chunks that can be processed by the Server in parallel
 func (b *Balancer) GetMaxLoad() int32 {
 	return b.maxLoad
 }
 
+// GetClientsStatus returns the client's status
 func (b *Balancer) GetClientsStatus(clientId string) *ClientStatus {
 	b.lock.RLock()
 	defer b.lock.RUnlock()
@@ -108,18 +112,21 @@ type ClientStatus struct {
 	processed int
 }
 
+// GetProcessed returns the number of processed tasks
 func (c *ClientStatus) GetProcessed() int {
 	c.clientLock.RLock()
 	defer c.clientLock.RUnlock()
 	return c.processed
 }
 
+// GetQueued returns the number of queued tasks
 func (c *ClientStatus) GetQueued() int {
 	c.clientLock.RLock()
 	defer c.clientLock.RUnlock()
 	return c.queued
 }
 
+// GetWeight returns the client's weight
 func (c *ClientStatus) GetWeight() int {
 	c.clientLock.RLock()
 	defer c.clientLock.RUnlock()
